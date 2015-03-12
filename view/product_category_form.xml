@@ -1,0 +1,8 @@
+<data>
+    <xpath expr="/form/notebook" position="inside">
+        <page id="return_policy" string="Return Policy">
+            <label name="return_policy" />
+            <field name="return_policy" />
+        </page>
+    </xpath>
+</data>

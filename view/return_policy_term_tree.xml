@@ -1,0 +1,6 @@
+<tree string="Return Policy Terms">
+    <field name="policy" />
+    <field name="reason" />
+    <field name="days" />
+    <field name="shipping_paid_by_customer" />
+</tree>

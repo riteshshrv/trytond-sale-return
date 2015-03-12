@@ -1,0 +1,8 @@
+<data>
+    <xpath expr="/form/field[@name='sale_shipment_method']" position="after">
+        <newline />
+        <separator id="default_return_policy" string="Return Policy" colspan="4" />
+        <label name="default_return_policy" />
+        <field name="default_return_policy" />
+    </xpath>
+</data>

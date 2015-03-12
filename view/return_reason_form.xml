@@ -1,0 +1,7 @@
+<form string="Return Reason">
+    <label name="name" />
+    <field name="name" />
+    <newline />
+    <separator id="description" string="Description" colspan="4"/>
+    <field name="description" colspan="4"/>
+</form>

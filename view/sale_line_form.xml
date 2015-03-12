@@ -1,0 +1,21 @@
+<data>
+    <xpath expr="/form/notebook/page[@id='general']/field[@name='delivery_date']" position="after">
+        <newline />
+        <label name="return_policy_at_sale" />
+        <field name="return_policy_at_sale" />
+        <label name="effective_return_policy_at_sale" />
+        <field name="effective_return_policy_at_sale" />
+    </xpath>
+    <xpath expr="/form/notebook/page[@id='notes']" position="after">
+        <page id="is_return" string="Return Details" states="{'invisible': ~Bool(Eval('is_return'))}">
+            <label name="origin" />
+            <field name="origin" />
+            <label name="return_policy" />
+            <field name="return_policy" />
+            <label name="return_type" />
+            <field name="return_type" />
+            <label name="return_reason" />
+            <field name="return_reason" />
+        </page>
+    </xpath>
+</data>
