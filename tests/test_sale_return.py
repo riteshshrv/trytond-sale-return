@@ -425,6 +425,7 @@ class TestSaleReturn(unittest.TestCase):
 
             self.assertTrue(sale_line)
             self.assertFalse(sale_line.is_return)
+            self.assertFalse(sale_line.returns)
 
             # Quote, Confirm and Process Sale
             self.Sale.quote([sale])
@@ -484,6 +485,9 @@ class TestSaleReturn(unittest.TestCase):
             self.assertTrue(return_sale.invoices)
             self.assertEqual(len(return_sale.invoices), 1)
             self.assertEqual(return_sale.invoices[0].type, 'out_credit_note')
+            self.assertTrue(sale_line.returns)
+            self.assertEqual(len(sale_line.returns), 1)
+            self.assertEqual(sale_line.returns[0].id, return_sale.id)
 
             # Create a new return sale with the same origin
             return_sale1, = self.Sale.create([{

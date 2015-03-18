@@ -78,6 +78,16 @@ class SaleLine:
         depends=DEPENDS + ['is_return']
     )
 
+    returns = fields.Function(
+        fields.One2Many(
+            'sale.line', None, 'Returns',
+            states={
+                'invisible': STATE,
+            },
+        ),
+        'get_returns'
+    )
+
     @staticmethod
     def default_return_type():
         return 'credit'
@@ -163,6 +173,17 @@ class SaleLine:
         return {
             'return_policy': None
         }
+
+    def get_returns(self, name):
+        """
+        Returns the return lines for a sale line
+        """
+        SaleLine = Pool().get('sale.line')
+
+        lines = SaleLine.search([
+            ('origin', '=', '%s,%s' % (self.__name__, self.id)),
+        ])
+        return map(int, lines)
 
 
 class SaleConfiguration:
