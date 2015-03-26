@@ -8,4 +8,6 @@
     <field name="shipping_paid_by_customer" />
     <label name="days" />
     <field name="days" />
+    <label name="since" />
+    <field name="since" />
 </form>
