@@ -31,7 +31,11 @@ class ReturnPolicyTerm(ModelSQL, ModelView):
 
     policy = fields.Many2One('sale.return.policy', 'Policy', select=True)
     reason = fields.Many2One('sale.return.reason', 'Reason', select=True)
-    days = fields.Integer('Days')
+    days = fields.Integer('Days', required=True)
+    since = fields.Selection([
+        ('shipping', 'Shipping'),
+        ('sale', 'Sale'),
+    ], 'Days Since', required=True)
     shipping_paid_by_customer = fields.Boolean('Shipping Paid by Customer?')
 
 

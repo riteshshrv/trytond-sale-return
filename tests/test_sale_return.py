@@ -259,9 +259,11 @@ class TestSaleReturn(unittest.TestCase):
             'terms': [('create', [{
                 'reason': self.reason_1,
                 'days': 7,
+                'since': 'sale',
             }, {
                 'reason': self.reason_2,
                 'days': 30,
+                'since': 'shipping',
             }])]
         }, {
             'name': 'Some other Policy',
@@ -269,9 +271,11 @@ class TestSaleReturn(unittest.TestCase):
             'terms': [('create', [{
                 'reason': self.reason_3,
                 'days': 7,
+                'since': 'sale',
             }, {
                 'reason': self.reason_4,
                 'days': 30,
+                'since': 'sale',
             }])]
         }])
 
