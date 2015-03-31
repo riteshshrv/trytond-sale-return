@@ -182,6 +182,7 @@ class SaleLine:
 
         lines = SaleLine.search([
             ('origin', '=', '%s,%s' % (self.__name__, self.id)),
+            ('sale.state', '!=', 'cancel')
         ])
         return map(int, lines)
 
