@@ -1,0 +1,13 @@
+<form string="Return Policy Term">
+    <label name="policy" />
+    <field name="policy" />
+    <newline />
+    <label name="reason" />
+    <field name="reason" />
+    <label name="shipping_paid_by_customer" />
+    <field name="shipping_paid_by_customer" />
+    <label name="days" />
+    <field name="days" />
+    <label name="since" />
+    <field name="since" />
+</form>

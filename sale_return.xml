@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<tryton>
+    <data>
+        <!--  Sale Return Policy  -->
+        <record model="ir.ui.view" id="return_policy_view_form">
+            <field name="model">sale.return.policy</field>
+            <field name="type">form</field>
+            <field name="name">return_policy_form</field>
+        </record>
+        <record model="ir.ui.view" id="return_policy_view_tree">
+            <field name="model">sale.return.policy</field>
+            <field name="type">tree</field>
+            <field name="name">return_policy_tree</field>
+        </record>
+        <record model="ir.action.act_window" id="act_return_policy_form">
+          <field name="name">Return Policies</field>
+            <field name="res_model">sale.return.policy</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_policy_form_view1">
+            <field name="sequence" eval="10" />
+            <field name="view" ref="return_policy_view_tree" />
+            <field name="act_window" ref="act_return_policy_form" />
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_policy_form_view2">
+            <field name="sequence" eval="20" />
+            <field name="view" ref="return_policy_view_form" />
+            <field name="act_window" ref="act_return_policy_form" />
+        </record>
+        <menuitem parent="sale.menu_sale" action="act_return_policy_form"
+            id="menu_return_policy_form" sequence="5"/>
+
+        <!--  Sale Return Term Policy  -->
+        <record model="ir.ui.view" id="return_policy_term_view_form">
+            <field name="model">sale.return.policy.term</field>
+            <field name="type">form</field>
+            <field name="name">return_policy_term_form</field>
+        </record>
+        <record model="ir.ui.view" id="return_policy_term_view_tree">
+            <field name="model">sale.return.policy.term</field>
+            <field name="type">tree</field>
+            <field name="name">return_policy_term_tree</field>
+        </record>
+        <record model="ir.action.act_window" id="act_return_policy_term_form">
+          <field name="name">Return Policy Terms</field>
+            <field name="res_model">sale.return.policy.term</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_policy_term_form_view1">
+            <field name="sequence" eval="10" />
+            <field name="view" ref="return_policy_term_view_tree" />
+            <field name="act_window" ref="act_return_policy_term_form" />
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_policy_term_form_view2">
+            <field name="sequence" eval="20" />
+            <field name="view" ref="return_policy_term_view_form" />
+            <field name="act_window" ref="act_return_policy_term_form" />
+        </record>
+        <menuitem parent="menu_return_policy_form" action="act_return_policy_term_form"
+            id="menu_return_policy_term_form" sequence="1"/>
+
+        <!--  Sale Return Reason  -->
+        <record model="ir.ui.view" id="return_reason_view_form">
+            <field name="model">sale.return.reason</field>
+            <field name="type">form</field>
+            <field name="name">return_reason_form</field>
+        </record>
+        <record model="ir.ui.view" id="return_reason_view_tree">
+            <field name="model">sale.return.reason</field>
+            <field name="type">tree</field>
+            <field name="name">return_reason_tree</field>
+        </record>
+        <record model="ir.action.act_window" id="act_return_reason_form">
+          <field name="name">Return Reasons</field>
+            <field name="res_model">sale.return.reason</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_reason_form_view1">
+            <field name="sequence" eval="10" />
+            <field name="view" ref="return_reason_view_tree" />
+            <field name="act_window" ref="act_return_reason_form" />
+        </record>
+        <record model="ir.action.act_window.view" id="act_return_reason_form_view2">
+            <field name="sequence" eval="20" />
+            <field name="view" ref="return_reason_view_form" />
+            <field name="act_window" ref="act_return_reason_form" />
+        </record>
+        <menuitem parent="menu_return_policy_form" action="act_return_reason_form"
+            id="menu_return_reason_form" sequence="2"/>
+    </data>
+</tryton>
