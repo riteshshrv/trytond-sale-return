@@ -19,7 +19,7 @@ def register():
         ProductCategory,
         ProductTemplate,
         Sale,
-        SaleLine,
         SaleConfiguration,
+        SaleLine,
         module='sale_return', type_='model'
     )
