@@ -251,7 +251,8 @@ class Sale:
                         '=',
                         '%s,%s' % (orig_line.__name__, orig_line.id)
                     ),
-                    ('id', '!=', line.id)
+                    ('id', '!=', line.id),
+                    ('sale.party', '=', sale.party.id),
                 ])
 
                 if line_with_same_origin:
