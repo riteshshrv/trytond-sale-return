@@ -242,13 +242,17 @@ class Sale:
             for line in filter(lambda l: l.is_return, sale.lines):
                 orig_line = line.origin
 
+                if not orig_line:
+                    continue
+
                 line_with_same_origin = SaleLine.search([
                     (
                         'origin',
                         '=',
                         '%s,%s' % (orig_line.__name__, orig_line.id)
                     ),
-                    ('id', '!=', line.id)
+                    ('id', '!=', line.id),
+                    ('sale.party', '=', sale.party.id),
                 ])
 
                 if line_with_same_origin:
