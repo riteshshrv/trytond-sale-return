@@ -181,8 +181,9 @@ class SaleLine:
         SaleLine = Pool().get('sale.line')
 
         lines = SaleLine.search([
+            ('sale.party', '=', self.sale.party),
             ('origin', '=', '%s,%s' % (self.__name__, self.id)),
-            ('sale.state', '!=', 'cancel')
+            ('sale.state', '!=', 'cancel'),
         ])
         return map(int, lines)
 
