@@ -242,6 +242,9 @@ class Sale:
             for line in filter(lambda l: l.is_return, sale.lines):
                 orig_line = line.origin
 
+                if not orig_line:
+                    continue
+
                 line_with_same_origin = SaleLine.search([
                     (
                         'origin',
