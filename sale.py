@@ -97,9 +97,10 @@ class SaleLine:
         """
         Returns default policy from sale configuration
         """
-        Configuration = Pool().get('sale.configuration')
+        sale_config = Pool().get('sale.configuration')(1)
 
-        return Configuration(1).default_return_policy.id
+        return sale_config.default_return_policy and \
+            sale_config.default_return_policy.id
 
     def get_effective_return_policy_at_sale(self, name):
         """
