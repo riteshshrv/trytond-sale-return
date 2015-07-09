@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
     tests/test_sale_return.py
-    :copyright: (C) 2015 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
 """
 import unittest
 import datetime
@@ -164,7 +162,7 @@ class TestSaleReturn(unittest.TestCase):
 
         with Transaction().set_context(company=None):
             company_party, = self.Party.create([{
-                'name': 'openlabs'
+                'name': 'fulfil.io'
             }])
 
         self.company, = self.Company.create([{
