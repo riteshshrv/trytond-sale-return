@@ -136,25 +136,20 @@ class SaleLine:
 
     @fields.depends('type')
     def on_change_quantity(self):
-        res = super(SaleLine, self).on_change_quantity()
+        super(SaleLine, self).on_change_quantity()
 
-        if not self.product:
-            return res
-
-        res['is_return'] = self.get_is_return()
-        return res
+        if self.product:
+            self.is_return = self.get_is_return()
 
     def on_change_product(self):
-        res = super(SaleLine, self).on_change_product()
+        super(SaleLine, self).on_change_product()
 
         if not self.product:
-            res['return_policy_at_sale'] = self.default_return_policy_at_sale()
-            return res
+            self.return_policy_at_sale = self.default_return_policy_at_sale()
 
-        if self.product.effective_return_policy:
-            res['return_policy_at_sale'] = \
-                self.product.effective_return_policy.id
-        return res
+        if self.product.template.effective_return_policy:
+            self.return_policy_at_sale = \
+                self.product.template.effective_return_policy.id
 
     @fields.depends('origin')
     def on_change_origin(self):
@@ -164,14 +159,11 @@ class SaleLine:
         SaleLine = Pool().get('sale.line')
 
         if isinstance(self.origin, SaleLine) and self.origin.id != -1:
-            return {
-                'return_policy':
-                    self.origin.effective_return_policy_at_sale and
+            self.return_policy = \
+                self.origin.effective_return_policy_at_sale and \
                     self.origin.effective_return_policy_at_sale.id
-            }
-        return {
-            'return_policy': None
-        }
+        else:
+            self.return_policy = None
 
     def get_returns(self, name):
         """

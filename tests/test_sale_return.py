@@ -8,13 +8,15 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT
+from trytond.tests.test_tryton import POOL, with_transaction, \
+    ModuleTestCase, CONTEXT, USER
 from trytond.transaction import Transaction
 from trytond.pyson import Eval
 from trytond.exceptions import UserError
 
 
-class TestSaleReturn(unittest.TestCase):
+class TestSaleReturn(ModuleTestCase):
+    module = 'sale_return'
 
     def setUp(self):
         """
@@ -88,9 +90,10 @@ class TestSaleReturn(unittest.TestCase):
         account_create_chart = POOL.get(
             'account.create_chart', type="wizard")
 
-        account_template, = AccountTemplate.search(
-            [('parent', '=', None)]
-        )
+        account_template, = AccountTemplate.search([
+            ('parent', '=', None),
+            ('name', '=', 'Minimal Account Chart')
+        ])
 
         session_id, _, _ = account_create_chart.create()
         create_chart = account_create_chart(session_id)
@@ -216,18 +219,20 @@ class TestSaleReturn(unittest.TestCase):
                 'revenue', company=self.company.id).id,
             'account_expense': self._get_account_by_kind(
                 'expense', company=self.company.id).id,
+            'accounting': True,
         }])
 
         self.product_template, = self.ProductTemplate.create([{
             'name': 'Bat Mobile',
             'type': 'goods',
             'salable': True,
-            'category': self.product_category.id,
+            'categories': [('add', [self.product_category.id])],
             'default_uom': self.uom.id,
             'sale_uom': self.uom.id,
             'list_price': Decimal('20000'),
             'cost_price': Decimal('15000'),
-            'account_category': True,
+            'account_category': self.product_category.id,
+            'accounts_category': True
         }])
 
         self.product, = self.Product.create([{
@@ -299,239 +304,243 @@ class TestSaleReturn(unittest.TestCase):
         self.sale_configuration.default_return_policy = self.policy_1.id
         self.sale_configuration.save()
 
+    @with_transaction()
     def test_0010_test_product_return_policy(self):
         """
         Test the return policy on products
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
+        self.setup_defaults()
 
-            self.assertIsNone(self.product.effective_return_policy)
+        self.assertIsNone(self.product.template.effective_return_policy)
 
-            # Write a return policy on product
-            self.product_category.return_policy = self.policy_1.id
-            self.product_category.save()
+        # Write a return policy on product
+        self.product_category.return_policy = self.policy_1.id
+        self.product_category.save()
 
-            self.assertEqual(
-                self.product.effective_return_policy.id, self.policy_1.id
-            )
+        self.assertEqual(
+            self.product.template.effective_return_policy.id,
+            self.policy_1.id
+        )
 
-            # Write a return policy on product
-            self.product_template.return_policy = self.policy_2.id
-            self.product_template.save()
+        # Write a return policy on product
+        self.product_template.return_policy = self.policy_2.id
+        self.product_template.save()
 
-            self.assertEqual(
-                self.product.effective_return_policy.id, self.policy_2.id
-            )
+        self.assertEqual(
+            self.product.template.effective_return_policy.id,
+            self.policy_2.id
+        )
 
+    @with_transaction()
     def test_0020_test_non_return_sale_line(self):
         """
         Test sale line
         """
         Date = POOL.get('ir.date')
 
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
+        self.setup_defaults()
 
-            sale, = self.Sale.create([{
-                'reference': 'Test Sale',
-                'payment_term': self.payment_term.id,
-                'currency': self.company.currency.id,
-                'party': self.party.id,
-                'invoice_address': self.party.addresses[0].id,
-                'shipment_address': self.party.addresses[0].id,
-                'sale_date': Date.today(),
-                'company': self.company.id,
-            }])
-            # Create sale line
-            values = {
-                'sale': sale.id,
-                'type': 'line',
-            }
-            values.update(self.SaleLine(**values).on_change_quantity())
-            values.update(self.SaleLine(**values).on_change_product())
-            self.assertEqual(
-                values['return_policy_at_sale'],
-                self.sale_configuration.default_return_policy.id)
-            values.update(self.SaleLine(**values).on_change_origin())
-            self.assertIsNone(values['return_policy'])
+        sale, = self.Sale.create([{
+            'reference': 'Test Sale',
+            'payment_term': self.payment_term.id,
+            'currency': self.company.currency.id,
+            'party': self.party.id,
+            'invoice_address': self.party.addresses[0].id,
+            'shipment_address': self.party.addresses[0].id,
+            'sale_date': Date.today(),
+            'company': self.company.id,
+        }])
 
-            # Write a return policy on product
-            self.product_template.return_policy = self.policy_2.id
-            self.product_template.save()
+        # Create sale line
+        values = {
+            'sale': sale.id,
+            'type': 'line',
+        }
+        values.update(self.SaleLine(**values).on_change_quantity())
+        values.update(self.SaleLine(**values).on_change_product())
+        self.assertEqual(
+            values['return_policy_at_sale'],
+            self.sale_configuration.default_return_policy.id)
+        self.assertEqual(sale.return_policy_at_sale, self.sale_configuration.default_return_policy.id)
+        values.update(self.SaleLine(**values).on_change_origin())
+        self.assertIsNone(sale.return_policy)
 
-            values['product'] = self.product.id
-            values.update(self.SaleLine(**values).on_change_product())
-            self.assertEqual(
-                values['return_policy_at_sale'],
-                self.product_template.return_policy.id)
+        # Write a return policy on product
+        self.product_template.return_policy = self.policy_2.id
+        self.product_template.save()
 
-            values['quantity'] = 1
-            values.update(self.SaleLine(**values).on_change_quantity())
-            self.assertFalse(values.get('is_return'))
+        values['product'] = self.product.id
+        values.update(self.SaleLine(**values).on_change_product())
+        self.assertEqual(
+            values['return_policy_at_sale'],
+            self.product_template.return_policy.id)
 
-            sale_line = self.SaleLine(**values)
-            sale_line.save()
+        values['quantity'] = 1
+        values.update(self.SaleLine(**values).on_change_quantity())
+        self.assertFalse(values.get('is_return'))
 
-            self.assertTrue(sale_line)
-            self.assertFalse(sale_line.is_return)
-            self.assertFalse(sale.has_return)
+        sale_line = self.SaleLine(**values)
+        sale_line.save()
 
-            self.assertTrue(sale_line.effective_return_policy_at_sale)
-            self.assertEqual(
-                sale_line.effective_return_policy_at_sale,
-                sale_line.return_policy_at_sale
-            )
-            # Set return_policy_at_sale as None
-            sale_line.return_policy_at_sale = None
-            sale_line.save()
-            self.assertTrue(sale_line.effective_return_policy_at_sale)
-            self.assertEqual(
-                sale_line.effective_return_policy_at_sale,
-                self.product.effective_return_policy
-            )
+        self.assertTrue(sale_line)
+        self.assertFalse(sale_line.is_return)
+        self.assertFalse(sale.has_return)
 
+        self.assertTrue(sale_line.effective_return_policy_at_sale)
+        self.assertEqual(
+            sale_line.effective_return_policy_at_sale,
+            sale_line.return_policy_at_sale
+        )
+        # Set return_policy_at_sale as None
+        sale_line.return_policy_at_sale = None
+        sale_line.save()
+        self.assertTrue(sale_line.effective_return_policy_at_sale)
+        self.assertEqual(
+            sale_line.effective_return_policy_at_sale,
+            self.product.effective_return_policy
+        )
+
+    @with_transaction()
     def test_0030_test_return_sale_fulfilling_policy(self):
         """
         Test returning a sale
         """
         Date = POOL.get('ir.date')
 
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
+        self.setup_defaults()
 
-            sale, = self.Sale.create([{
-                'reference': 'Test Sale',
-                'payment_term': self.payment_term.id,
-                'currency': self.company.currency.id,
-                'party': self.party.id,
-                'invoice_address': self.party.addresses[0].id,
-                'shipment_address': self.party.addresses[0].id,
-                'sale_date': Date.today(),
-                'company': self.company.id,
-            }])
+        sale, = self.Sale.create([{
+            'reference': 'Test Sale',
+            'payment_term': self.payment_term.id,
+            'currency': self.company.currency.id,
+            'party': self.party.id,
+            'invoice_address': self.party.addresses[0].id,
+            'shipment_address': self.party.addresses[0].id,
+            'sale_date': Date.today(),
+            'company': self.company.id,
+        }])
 
-            # Create sale line
-            values = {
-                'sale': sale.id,
-                'type': 'line',
-                'quantity': 1,
-                'product': self.product.id
-            }
+        # Create sale line
+        values = {
+            'sale': sale.id,
+            'type': 'line',
+            'quantity': 1,
+            'product': self.product.id
+        }
 
-            values.update(self.SaleLine(**values).on_change_product())
-            values.update(self.SaleLine(**values).on_change_quantity())
+        values.update(self.SaleLine(**values).on_change_product())
+        values.update(self.SaleLine(**values).on_change_quantity())
 
-            sale_line = self.SaleLine(**values)
-            sale_line.save()
+        sale_line = self.SaleLine(**values)
+        sale_line.save()
 
-            self.assertTrue(sale_line)
-            self.assertFalse(sale_line.is_return)
-            self.assertFalse(sale_line.returns)
+        self.assertTrue(sale_line)
+        self.assertFalse(sale_line.is_return)
+        self.assertFalse(sale_line.returns)
 
-            # Quote, Confirm and Process Sale
-            self.Sale.quote([sale])
-            self.Sale.confirm([sale])
-            self.Sale.process([sale])
+        # Quote, Confirm and Process Sale
+        self.Sale.quote([sale])
+        self.Sale.confirm([sale])
+        self.Sale.process([sale])
 
-            # Create a return sale
-            return_sale, = self.Sale.create([{
-                'reference': 'Test Sale',
-                'payment_term': self.payment_term.id,
-                'currency': self.company.currency.id,
-                'party': self.party.id,
-                'invoice_address': self.party.addresses[0].id,
-                'shipment_address': self.party.addresses[0].id,
-                'sale_date': Date.today(),
-                'company': self.company.id,
-            }])
+        # Create a return sale
+        return_sale, = self.Sale.create([{
+            'reference': 'Test Sale',
+            'payment_term': self.payment_term.id,
+            'currency': self.company.currency.id,
+            'party': self.party.id,
+            'invoice_address': self.party.addresses[0].id,
+            'shipment_address': self.party.addresses[0].id,
+            'sale_date': Date.today(),
+            'company': self.company.id,
+        }])
 
-            # Create sale line
-            values = {
-                'sale': return_sale.id,
-                'type': 'line',
-                'quantity': -1,
-                'product': self.product.id
-            }
-            values.update(self.SaleLine(**values).on_change_product())
-            values.update(self.SaleLine(**values).on_change_quantity())
-            values['origin'] = '%s,%s' % (self.SaleLine.__name__, -1)
+        # Create sale line
+        values = {
+            'sale': return_sale.id,
+            'type': 'line',
+            'quantity': -1,
+            'product': self.product.id
+        }
+        values.update(self.SaleLine(**values).on_change_product())
+        values.update(self.SaleLine(**values).on_change_quantity())
+        values['origin'] = '%s,%s' % (self.SaleLine.__name__, -1)
 
-            values.update(self.SaleLine(**values).on_change_origin())
-            self.assertIsNone(values['return_policy'])
-            self.assertTrue(values['is_return'])
+        values.update(self.SaleLine(**values).on_change_origin())
+        self.assertIsNone(values['return_policy'])
+        self.assertTrue(values['is_return'])
 
-            values['origin'] = '%s,%s' % (self.SaleLine.__name__, sale_line.id)
-            values.update(self.SaleLine(**values).on_change_origin())
-            self.assertIsNotNone(values['return_policy'])
-            self.assertEqual(
-                values['return_policy'],
-                sale_line.effective_return_policy_at_sale.id)
+        values['origin'] = '%s,%s' % (self.SaleLine.__name__, sale_line.id)
+        values.update(self.SaleLine(**values).on_change_origin())
+        self.assertIsNotNone(values['return_policy'])
+        self.assertEqual(
+            values['return_policy'],
+            sale_line.effective_return_policy_at_sale.id)
 
-            values['return_reason'] = self.reason_2.id
-            values['return_type'] = self.SaleLine.default_return_type()
+        values['return_reason'] = self.reason_2.id
+        values['return_type'] = self.SaleLine.default_return_type()
 
-            return_sale_line = self.SaleLine(**values)
-            return_sale_line.save()
+        return_sale_line = self.SaleLine(**values)
+        return_sale_line.save()
 
-            self.assertTrue(return_sale_line)
-            self.assertTrue(return_sale_line.is_return)
-            self.assertTrue(return_sale.has_return)
+        self.assertTrue(return_sale_line)
+        self.assertTrue(return_sale_line.is_return)
+        self.assertTrue(return_sale.has_return)
 
-            # Quote, Confirm and Process Sale
-            self.Sale.quote([return_sale])
-            self.Sale.confirm([return_sale])
-            self.Sale.process([return_sale])
+        # Quote, Confirm and Process Sale
+        self.Sale.quote([return_sale])
+        self.Sale.confirm([return_sale])
+        self.Sale.process([return_sale])
 
-            self.assertTrue(return_sale.shipment_returns)
-            self.assertTrue(return_sale.invoices)
-            self.assertEqual(len(return_sale.invoices), 1)
-            self.assertEqual(return_sale.invoices[0].type, 'out_credit_note')
-            self.assertTrue(sale_line.returns)
-            self.assertEqual(len(sale_line.returns), 1)
-            self.assertEqual(sale_line.returns[0].id, return_sale.id)
+        self.assertTrue(return_sale.shipment_returns)
+        self.assertTrue(return_sale.invoices)
+        self.assertEqual(len(return_sale.invoices), 1)
+        self.assertEqual(return_sale.invoices[0].type, 'out_credit_note')
+        self.assertTrue(sale_line.returns)
+        self.assertEqual(len(sale_line.returns), 1)
+        self.assertEqual(sale_line.returns[0].id, return_sale.id)
 
-            # Create a new return sale with the same origin
-            return_sale1, = self.Sale.create([{
-                'reference': 'Test Sale',
-                'payment_term': self.payment_term.id,
-                'currency': self.company.currency.id,
-                'party': self.party.id,
-                'invoice_address': self.party.addresses[0].id,
-                'shipment_address': self.party.addresses[0].id,
-                'sale_date': Date.today(),
-                'company': self.company.id,
-            }])
+        # Create a new return sale with the same origin
+        return_sale1, = self.Sale.create([{
+            'reference': 'Test Sale',
+            'payment_term': self.payment_term.id,
+            'currency': self.company.currency.id,
+            'party': self.party.id,
+            'invoice_address': self.party.addresses[0].id,
+            'shipment_address': self.party.addresses[0].id,
+            'sale_date': Date.today(),
+            'company': self.company.id,
+        }])
 
-            # Create sale line
-            values = {
-                'sale': return_sale1.id,
-                'type': 'line',
-                'quantity': -1,
-                'product': self.product.id,
-            }
-            values.update(self.SaleLine(**values).on_change_product())
-            values.update(self.SaleLine(**values).on_change_quantity())
+        # Create sale line
+        values = {
+            'sale': return_sale1.id,
+            'type': 'line',
+            'quantity': -1,
+            'product': self.product.id,
+        }
+        values.update(self.SaleLine(**values).on_change_product())
+        values.update(self.SaleLine(**values).on_change_quantity())
 
-            values['origin'] = '%s,%s' % (self.SaleLine.__name__, sale_line.id)
-            values.update(self.SaleLine(**values).on_change_origin())
+        values['origin'] = '%s,%s' % (self.SaleLine.__name__, sale_line.id)
+        values.update(self.SaleLine(**values).on_change_origin())
 
-            return_sale_line1 = self.SaleLine(**values)
-            return_sale_line1.save()
+        return_sale_line1 = self.SaleLine(**values)
+        return_sale_line1.save()
 
-            self.assertTrue(return_sale_line1)
-            self.assertTrue(return_sale_line1.is_return)
-            self.assertTrue(return_sale1.has_return)
+        self.assertTrue(return_sale_line1)
+        self.assertTrue(return_sale_line1.is_return)
+        self.assertTrue(return_sale1.has_return)
 
-            # Quote, Confirm and Process Sale
-            self.Sale.quote([return_sale1])
-            try:
-                self.Sale.confirm([return_sale1])
-            except UserError, e:
-                self.assertTrue(
-                    e.message.endswith(
-                        'returned on Sale #%s.' % return_sale.reference)
-                )
+        # Quote, Confirm and Process Sale
+        self.Sale.quote([return_sale1])
+        try:
+            self.Sale.confirm([return_sale1])
+        except UserError, e:
+            self.assertTrue(
+                e.message.endswith(
+                    'returned on Sale #%s.' % return_sale.reference)
+            )
 
 
 def suite():
